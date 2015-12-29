@@ -38,7 +38,7 @@ class admin_mexico extends fs_controller
       {
          if($_GET['opcion'] == 'moneda')
          {
-            $this->empresa->coddivisa = 'ARS';
+            $this->empresa->coddivisa = 'MXN';
             if( $this->empresa->save() )
             {
                $this->new_message('Datos guardados correctamente.');
@@ -46,7 +46,7 @@ class admin_mexico extends fs_controller
          }
          else if($_GET['opcion'] == 'pais')
          {
-            $this->empresa->codpais = 'ARG';
+            $this->empresa->codpais = 'MX';
             if( $this->empresa->save() )
             {
                $this->new_message('Datos guardados correctamente.');
