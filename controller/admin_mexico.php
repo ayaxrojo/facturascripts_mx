@@ -19,15 +19,15 @@
  */
 
 /**
- * Description of admin_argentina
+ * Description of admin_mexico
  *
- * @author carlos
+ * @author ayaxrojo
  */
-class admin_argentina extends fs_controller
+class admin_mexico extends fs_controller
 {
    public function __construct()
    {
-      parent::__construct(__CLASS__, 'Argentina', 'admin');
+      parent::__construct(__CLASS__, 'Mexico', 'admin');
    }
    
    protected function private_core()
