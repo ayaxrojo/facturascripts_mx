@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<files>
+<databases>
+<tb nam="agentes" />
+<tb nam="albaranescli" />
+<tb nam="almacenes" />
+<tb nam="empresa" />
+<tb nam="facturascli" />
+<tb nam="servicioscli" />
+</databases>
+</files>

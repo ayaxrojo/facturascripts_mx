@@ -25,20 +25,197 @@
  */
 class admin_mexico extends fs_controller
 {
-   public function __construct()
-   {
-      parent::__construct(__CLASS__, 'Mexico', 'admin');
+   
+   protected $EpathMX;
+   protected $UsHr;
+   
+   public $Install_Path;
+   public $Rsl_Mx_Str = '{info:{rsl:0, cp:"0"}};';
+   public $ColMx;
+   
+   
+   const DS = DIRECTORY_SEPARATOR;
+   const R = "\r\n";
+   const SL = "\\";
+   
+   public function install_MX(){
+              
+       $path = realpath(dirname(__FILE__));
+       $this->Install_Path = realpath(dirname($path, 1)) . self::DS;
+       
+       unset($path);
+       
+       $FsConf = $this->Install_Path . 'config.php';
+       $FsUnI =  $this->Install_Path . 'plugins' . self::DS . 'admin_mexico' . self::DS . 'extras' . self::DS . 'uninstall.xml';
+              
+       if(!copy($FsConf, $FsConf. '.bak')){
+           return (boolean) false;
+       }
+       
+       if(is_writable($FsConf)){
+           
+           $strConf = file_get_contents($FsConf);           
+           
+           if(strpos($strConf, "define('FS_INSTALL_PATH',") === false){
+              $setDef = self::R . '/// Modificación admin_mexico' . self::R . "define('FS_INSTALL_PATH', '" . $this->Install_Path . "');"; 
+              file_put_contents($FsConf, $setDef, FILE_APPEND | LOCK_EX);                  
+           }
+           
+           unset($strConf);
+           
+           if(file_exists($FsUnI)){
+             unlink($FsUnI);
+           }
+           
+           $fp = fopen($FsUnI, 'w+');
+           fwrite($fp, '<?xml version="1.0" encoding="UTF-8"?>' . "\r\n");
+           fwrite($fp, '<files>' . self::R);
+           fclose($fp);
+           
+           require_once($this->Install_Path . 'base'. self::DS .'fs_db2.php');
+           $db = new fs_db2();
+           
+           if( $db->connect() ){
+              $tables = $db->list_tables();              
+              file_put_contents($FsUnI,  '<databases>'. self::R, FILE_APPEND | LOCK_EX);
+              $qry = "SELECT TABLE_NAME AS name FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = '" . FS_DB_NAME . "' AND COLUMN_NAME = 'codpostal'";
+               
+              if($rs = $db->select($qry)){
+                    foreach($rs as $tb){
+                        $e = '<tb nam="'. $tb["name"] . '" />' . self::R;
+                        file_put_contents($FsUnI, $e, FILE_APPEND | LOCK_EX);
+                    }
+              }             
+              
+              file_put_contents($FsUnI,  '</databases>' . self::R . '</files>', FILE_APPEND | LOCK_EX);
+              //$db->exec("ALTER TABLE empresa ADD colonia TEXT AFTER codpostal;", false); 
+           }           
+           return (string) 'true';
+       }else{
+           return (string) 'false';
+       }
    }
    
-   protected function private_core()
+   public function huso_hor_mx(){
+       $DThus = array(
+                        "UTC/GMT -06:00" => array("Distrito Federal", "Aguascalientes", "Campeche", "Chiapas", "Coahuila de Zaragoza", "Colima", "Durango", "Guanajuato", "Guerrero", "Hidalgo", "Jalisco", "México", "Michoacán de Ocampo", "Morelos", "Nuevo León", "Oaxaca", "Puebla", "Querétaro Arteaga", "San Luis Potosí", "Tabasco", "Tamaulipas", "Tlaxcala", "Veracruz", "Yucatán", "Zacatecas"),
+                        "UTC/GMT -07:00" => array("Baja California Sur", "Chihuahua", "Nayarit", "Sinaloa", "Sonora"),
+                        "UTC/GMT -08:00" => array("Baja California")
+                    );
+       $html_str = "";
+       
+       foreach($DThus as $hor => $val){            
+            foreach($val as $hr){
+                if(preg_match("/$this->UsHr/i", $hr)){
+                    $xscl = 'selected';
+                }else{
+                    $xscl = 'data="' . $this->UsHr . ':' . $hr . '"';
+                }
+                
+                $html_str .= '<option value="'. $hor .'"' . $xscl . ' >' . $hr . '  ' . $hor .'</option>';
+            }              
+       };
+	        
+       return (string) $html_str;
+   }  
+   
+   public function traducciones()
    {
+      $clist = array();
+      
+      $include = array(          
+          'albaran','albaranes', 'cifnif','irpf'
+      );
+      
+      $tradMX = array(
+          'recibo', 'recibos', 'R.F.C.', 'I.S.R.' 
+      );
+      
+      $x=0;
+      
+      foreach($GLOBALS['config2'] as $i => $value)
+      {
+         if( in_array($i, $include) ){
+            $clist[] = array('tradMX' => $tradMX[$x], 'nombre' => $i, 'valor' => $value);
+            $x++;
+         }
+      }
+      
+      return (array) $clist;
+   }
+   
+   public function __construct()
+   {
+      parent::__construct(__CLASS__, 'Mexico', 'admin', TRUE, TRUE, TRUE);
+   }
+   
+   protected function get_path_extras_mx(){
+       
+       $PT = '/^(.+)(' . self::SL . self::DS . 'admin_mexico' . self::SL . self::DS . 'controller)$/m';
+       $RP = self::DS . 'admin_mexico' . self::DS . 'extras'. self::DS;
+       $DN = dirname(__FILE__);
+       
+       if(preg_match($PT,  $DN)){
+            $this->EpathMX = preg_replace($PT, "$1".$RP, $DN);
+            unset($PT);
+            unset($RP);
+            unset($DN);
+       }
+       
+   }
+
+   protected function get_cp_mx( $cp ){
+       $file_mx =  $this->EpathMX . 'simple_html_dom.php';
+       if(is_readable($file_mx)){
+              require_once ($file_mx);
+              unset($file_mx);
+              $cp_Mx_Url = 'https://api-codigos-postales.herokuapp.com/v2/codigo_postal/' . $cp;
+              $html = file_get_html($cp_Mx_Url);
+              if($html){
+                $ret = $html->plaintext;
+                unset($html);
+                return (string) $ret;
+              }else{
+                return (string) '';  
+              }
+      }      
+      return (string) '';
+   }
+            
+   protected function private_core()   {
+          
       $this->share_extensions();
+      $this->get_path_extras_mx();
+      $GetCp = $this->empresa->codpostal;
+      
+      if(empty($GetCp)){
+          $GetCp = 0;
+      }
+      
+      if(!empty($GetCp)){
+        $this->Rsl_Mx_Str = '{info:{rsl:0, cp:"'. $GetCp .'"}};';
+      }
+      
+     if(isset($_GET['cpMX'])){
+          $CpMx = $this->get_cp_mx( $_GET['cpMX'] );
+          if(!empty($CpMx)){
+                $json = json_decode($CpMx);
+                $this->empresa->provincia = $json->estado;
+                $this->empresa->ciudad = $json->municipio;
+                $this->colonia = $json->colonias;
+                $this->empresa->codpostal = $json->codigo_postal;
+                $this->UsHr =  $json->estado;
+                $this->Rsl_Mx_Str = '{info: {rsl:1, cp:"' . $json->codigo_postal . '"},data:' . $CpMx .'};';                
+          }else{
+                $this->Rsl_Mx_Str = '{info:{rsl:0, cp:"0"}};';                
+          }
+      }
       
       if( isset($_GET['opcion']) )
       {
          if($_GET['opcion'] == 'moneda')
          {
-            $this->empresa->coddivisa = 'MXN';
+            $this->empresa->coddivisa = 'PSO';
             if( $this->empresa->save() )
             {
                $this->new_message('Datos guardados correctamente.');
