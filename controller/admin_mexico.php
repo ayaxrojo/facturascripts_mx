@@ -2,7 +2,7 @@
 
 /*
  * This file is part of FacturaSctipts
- * Copyright (C) 2015  Carlos Garcia Gomez  neorazorx@gmail.com
+ * Copyright (C) 2015  Carlos Garcia Gomez - neorazorx@gmail.com
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -23,17 +23,18 @@
  *
  * @author ayaxrojo
  */
+
 class admin_mexico extends fs_controller
 {
    
    protected $EpathMX;
    protected $UsHr;
    
-   public $Install_Path;
+   public $Install_Path;   
    public $Rsl_Mx_Str = '{info:{rsl:0, cp:"0"}};';
    public $ColMx;
-   
-   
+   public $UsHrMX = '';
+      
    const DS = DIRECTORY_SEPARATOR;
    const R = "\r\n";
    const SL = "\\";
@@ -58,7 +59,9 @@ class admin_mexico extends fs_controller
            
            if(strpos($strConf, "define('FS_INSTALL_PATH',") === false){
               $setDef = self::R . '/// Modificación admin_mexico' . self::R . "define('FS_INSTALL_PATH', '" . $this->Install_Path . "');"; 
-              file_put_contents($FsConf, $setDef, FILE_APPEND | LOCK_EX);                  
+              if(!file_put_contents($FsConf, $setDef, FILE_APPEND | LOCK_EX)){
+					return (boolean) false;
+			  }                  
            }
            
            unset($strConf);
@@ -78,25 +81,29 @@ class admin_mexico extends fs_controller
            if( $db->connect() ){
               $tables = $db->list_tables();              
               file_put_contents($FsUnI,  '<databases>'. self::R, FILE_APPEND | LOCK_EX);
-              $qry = "SELECT TABLE_NAME AS name FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = '" . FS_DB_NAME . "' AND COLUMN_NAME = 'codpostal'";
+              $qry = "SELECT TABLE_NAME AS name FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = '" . FS_DB_NAME . "' AND COLUMN_NAME = 'codpostal' AND TABLE_NAME='empresa';";
                
               if($rs = $db->select($qry)){
                     foreach($rs as $tb){
                         $e = '<tb nam="'. $tb["name"] . '" />' . self::R;
                         file_put_contents($FsUnI, $e, FILE_APPEND | LOCK_EX);
+						$db->exec("ALTER TABLE " . $tb["name"] . " ADD colonia TEXT NULL AFTER codpostal;", false);
                     }
               }             
               
               file_put_contents($FsUnI,  '</databases>' . self::R . '</files>', FILE_APPEND | LOCK_EX);
-              //$db->exec("ALTER TABLE empresa ADD colonia TEXT AFTER codpostal;", false); 
-           }           
-           return (string) 'true';
+               
+           }else{
+		     return (boolean) false;
+		   }          
+           return (boolean) false;
        }else{
-           return (string) 'false';
+           return (boolean) false;
        }
    }
    
-   public function huso_hor_mx(){
+   protected function huso_hor_mx(){
+   
        $DThus = array(
                         "UTC/GMT -06:00" => array("Distrito Federal", "Aguascalientes", "Campeche", "Chiapas", "Coahuila de Zaragoza", "Colima", "Durango", "Guanajuato", "Guerrero", "Hidalgo", "Jalisco", "México", "Michoacán de Ocampo", "Morelos", "Nuevo León", "Oaxaca", "Puebla", "Querétaro Arteaga", "San Luis Potosí", "Tabasco", "Tamaulipas", "Tlaxcala", "Veracruz", "Yucatán", "Zacatecas"),
                         "UTC/GMT -07:00" => array("Baja California Sur", "Chihuahua", "Nayarit", "Sinaloa", "Sonora"),
@@ -105,11 +112,11 @@ class admin_mexico extends fs_controller
        $html_str = "";
        
        foreach($DThus as $hor => $val){            
-            foreach($val as $hr){
-                if(preg_match("/$this->UsHr/i", $hr)){
+            foreach($val as $hr){			    
+				$xscl = '';
+                
+				if(preg_match("/$this->UsHr/i", $hr)){
                     $xscl = 'selected';
-                }else{
-                    $xscl = 'data="' . $this->UsHr . ':' . $hr . '"';
                 }
                 
                 $html_str .= '<option value="'. $hor .'"' . $xscl . ' >' . $hr . '  ' . $hor .'</option>';
@@ -117,6 +124,7 @@ class admin_mexico extends fs_controller
        };
 	        
        return (string) $html_str;
+	   
    }  
    
    public function traducciones()
@@ -182,36 +190,47 @@ class admin_mexico extends fs_controller
       return (string) '';
    }
             
-   protected function private_core()   {
+   protected function private_core(){
           
       $this->share_extensions();
       $this->get_path_extras_mx();
-      $GetCp = $this->empresa->codpostal;
+      $CodMx =  $this->empresa->codpostal;	  
+     
+	 if(isset($_POST['cpMX']) && !empty($_POST['cpMX'])){          
+		$CpMx = $this->get_cp_mx( $_POST['cpMX'] );		  		  
+     }elseif(!empty($CodMx)){	 
+		$CpMx = $this->get_cp_mx( $CodMx );		 
+	 }
       
-      if(empty($GetCp)){
-          $GetCp = 0;
-      }
-      
-      if(!empty($GetCp)){
-        $this->Rsl_Mx_Str = '{info:{rsl:0, cp:"'. $GetCp .'"}};';
-      }
-      
-     if(isset($_GET['cpMX'])){
-          $CpMx = $this->get_cp_mx( $_GET['cpMX'] );
-          if(!empty($CpMx)){
-                $json = json_decode($CpMx);
-                $this->empresa->provincia = $json->estado;
-                $this->empresa->ciudad = $json->municipio;
-                $this->colonia = $json->colonias;
-                $this->empresa->codpostal = $json->codigo_postal;
-                $this->UsHr =  $json->estado;
-                $this->Rsl_Mx_Str = '{info: {rsl:1, cp:"' . $json->codigo_postal . '"},data:' . $CpMx .'};';                
-          }else{
-                $this->Rsl_Mx_Str = '{info:{rsl:0, cp:"0"}};';                
-          }
-      }
-      
-      if( isset($_GET['opcion']) )
+	 if(!empty($CpMx)){
+		 $json = json_decode($CpMx);
+		 if($json){
+		    if(!empty($json->estado) && !empty($json->municipio)){ 
+				$this->empresa->provincia = $json->estado;
+				$this->empresa->ciudad = $json->municipio;
+				$this->colonia = $json->colonias;
+				$this->empresa->codpostal = $json->codigo_postal;
+				$this->UsHr =  $json->estado;
+				$this->Rsl_Mx_Str = '{info: {rsl:1, cp:"' . $json->codigo_postal . '"}};';
+				$this->UsHrMX = $this->huso_hor_mx();
+			}else{
+				$this->Rsl_Mx_Str = '{info:{rsl:0, cp:"0"}};';
+				$this->empresa->codpostal = '';
+			}
+		 }else{
+			$this->Rsl_Mx_Str = '{info:{rsl:0, cp:"0"}};';
+			$this->empresa->codpostal = '';
+		 }
+     }else{
+         $this->Rsl_Mx_Str = '{info:{rsl:0, cp:"0"}};';
+		 $this->empresa->codpostal = '';
+     } 
+	  
+	 if(isset($_POST['Frm_install'])){
+	     $rslt = $this->install_MX();	  
+	 }
+	  
+     if( isset($_GET['opcion']) )
       {
          if($_GET['opcion'] == 'moneda')
          {

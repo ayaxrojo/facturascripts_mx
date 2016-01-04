@@ -2,6 +2,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.1/css/select2.min.css" />
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.1/js/select2.min.js"></script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.1/js/i18n/es.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-form-validator/2.2.8/jquery.form-validator.min.js"></script>
 
 <style type="text/css">
     #estados{
@@ -17,6 +18,9 @@
 <script type="text/javascript">
             
     $(document).ready(function(){
+		
+	   $('.Display_Data').hide();
+		
        $("#cpMX").keydown(function (e) {
             if ($.inArray(e.keyCode, [46, 8, 9, 27, 13, 110, 190]) !== -1 ||
                 (e.keyCode == 65 && e.ctrlKey === true) ||
@@ -49,11 +53,19 @@
                    window.location = CurlMX + '&cpMX=' + CpMx + '#empresa';
                  }
         };
+		
+		$.validate({
+			form : '#MxAdmin_Empresa_CP, #MxAdmin_Empresa'
+		});
         
        DirMx = {$fsc->Rsl_Mx_Str}
        
        var select = $('#MXestados').select2();
        
+	   if(DirMx.info.rsl === 1){
+			$('.Display_Data').show();
+	   }
+	   
        if(DirMx.info.cp){
             if(DirMx.info.cp !== "0"){
               $('#Mcp').val(new String( DirMx.info.cp )); 
@@ -115,7 +127,8 @@
       else if(id == 'empresa')
       {
          $("#panel_empresa").show();
-         $("#b_empresa").addClass('active');         
+         $("#b_empresa").addClass('active');
+         
       }
       else
       {
@@ -128,28 +141,29 @@
     
 </script>
 <div class="container-fluid">
-     <div class="row">
-      <div class="col-md-2 col-sm-3">
-         <div class="list-group">
-            <a id="b_aviso" href="#aviso" class="list-group-item active" onclick="mostrar_seccion('')">
-               <span class="glyphicon glyphicon-alert"></span> &nbsp; Aviso
-            </a> 
-            <a id="b_empresa" href="#empresa" class="list-group-item" onclick="mostrar_seccion('empresa')">
-               <span class="glyphicon glyphicon-dashboard"></span> &nbsp; Datos generales
-            </a>            
-            <a id="b_facturacion" href="#facturacion" class="list-group-item" onclick="mostrar_seccion('facturacion')">
-               <span class="glyphicon glyphicon-usd"></span> &nbsp; Facturación
-            </a> 
-            <a id="b_traduccion" href="#traduccion" class="list-group-item" onclick="mostrar_seccion('traduccion')">
-               <span class="glyphicon glyphicon-open-file"></span> &nbsp; Traducción
-            </a>  
-         </div>
-      </div>
-         
-      <div class="col-md-10 col-sm-9">
-         <form name="MxAdmin" action="{$fsc->page->url()}" method="post" class="form" role="form">
-           
-           <div class="panel panel-primary" id="panel_aviso">
+
+	 	  <div class="col-md-2 col-sm-3">
+			 <div class="list-group">
+				<a id="b_aviso" href="#aviso" class="list-group-item active" onclick="mostrar_seccion('')">
+				   <span class="glyphicon glyphicon-alert"></span> &nbsp; Aviso
+				</a> 
+				<a id="b_empresa" href="#empresa" class="list-group-item" onclick="mostrar_seccion('empresa')">
+				   <span class="glyphicon glyphicon-dashboard"></span> &nbsp; Dirección
+				</a>            
+				<a id="b_facturacion" href="#facturacion" class="list-group-item" onclick="mostrar_seccion('facturacion')">
+				   <span class="glyphicon glyphicon-usd"></span> &nbsp; Facturación
+				</a> 
+				<a id="b_traduccion" href="#traduccion" class="list-group-item" onclick="mostrar_seccion('traduccion')">
+				   <span class="glyphicon glyphicon-globe"></span> &nbsp; Traducción
+				</a>  
+			 </div>
+		  </div>	 
+	 
+<div class="col-md-10 col-sm-9">			
+		<div class="panel panel-primary" id="panel_aviso">
+				<form name="MxAdmin_Aviso" action="{$fsc->page->url()}#empresa" method="POST" class="form" role="form">
+					<input type="hidden" value="{$fsc->empresa->codpostal}" name="cpMX" />
+				</form>
                <div class="panel-heading">
                   <h3 class="panel-title">AVISO</h3>
                </div>
@@ -196,190 +210,144 @@
                </div>
                <div class="panel-footer text-right">
                    <div class="form-group">
-                      <span class="input-group-btn">
-                          <a href="{$fsc->url()}#empresa" class="btn btn-default" type="button"><span class="glyphicon glyphicon-ok"></span>&nbsp;Instalar</a>
-                      </span>
+				      <form name="MxAdmin_Install" id="MxAdmin_Install" action="{$fsc->page->url()}" method="POST" class="form" role="form">
+						  <input type="hidden" name="Frm_install" value="install" />
+						  <button type="submit" class="btn btn-default"><span class="glyphicon glyphicon-ok"></span>&nbsp Instalar</button>
+					  </form>	  
                   </div>
-               </div>
-           </div>              
-             
-            <div class="panel panel-primary" id="panel_empresa">
+               </div>			    
+        </div>	
+		
+		<div class="panel panel-primary" id="panel_empresa">
+				   <div class="panel-heading">
+					  <h3 class="panel-title">Dirección:</h3>
+				   </div>
+			<div class="panel-body">
+				<form name="MxAdmin_Empresa_CP" id="MxAdmin_Empresa_CP" action="{$fsc->page->url()}#empresa" method="POST" class="form" role="form">
+						<div class="row">
+							<br />
+							<div class="col-sm-3">
+								Dirección por Código Postal:
+							</div>
+						</div>				
+						<div class="row">                    
+							<div class="col-sm-3">
+							  <div class="form-group">  
+								<div class="input-group">
+								  <input type="text" value="{$fsc->empresa->codpostal}" class="form-control" id="cpMX" name="cpMX" maxlength="5" data-validation="required number length" data-validation-length="5" data-validation-error-msg-required="Proporcione el Código Postal" data-validation-error-msg-length="5 números obligatorios" data-validation-error-msg-number="Sólo números" />
+								  <span class="input-group-btn">
+									<input type="submit" class="btn btn-default"><span class="glyphicon glyphicon-search"></span></submit>
+								  </span>
+								</div>
+							  </div>    
+							</div>
+							<br />
+						</div>                   
+				</form>
+				
+				<form name="MxAdmin_Empresa" id="MxAdmin_Empresa" action="{$fsc->page->url()}#empresa" method="post" class="form" role="form">	
+							<div class="Display_Data">
+								<div class="row">
+									<div class="col-sm-12">								
+										<div style="line-height: 5%; font-size: 12px;">
+										<br />
+											<i>Funciona con <a href="http://simplehtmldom.sourceforge.net/" target="_blank">SimpleHtmlDom</a> y con la API desarrollada por <a href="https://github.com/Munett" target="_blank">Münett</a></i> 
+											<hr style="width: 100%; color: black; height: 1px; background-color:black;" />									
+										</div>    
+									</div>							
+								</div>
+								 <div class="row">  
+									<div class="col-sm-12">
+										<div class="form-group">
+											<br />
+											Zona Horaria:
+											<select class="form-control" id="MXestados" style="width: 300px;" data-validation="required">   
+											   {$fsc->UsHrMX}
+											</select>									
+										</div>
+										<br />
+									 </div>							 
+								 </div>   
+								 <div class="row">									
+								  <div class="col-sm-3">
+									 <div class="form-group">
+										Estado:
+										<input id="ac_provincia" class="form-control" type="text" name="provincia"  value="{$fsc->empresa->provincia}" value="" data-validation="required" data-validation-error-msg="Campo Obligatorio"/>
+									 </div>
+								  </div>
+								  <div class="col-sm-3">
+									 <div class="form-group">
+										Ciudad / Municipio / Delegación:
+										<input class="form-control" type="text" name="ciudad" value="{$fsc->empresa->ciudad}" autocomplete="off" data-validation="required" data-validation-error-msg="Campo Obligatorio"/>
+									 </div>
+								  </div>						 
+								  <div class="col-sm-3">
+									 <div class="form-group">
+										Colonia:                        
+										<select name="colonia" class="form-control" data-validation="required" data-validation-error-msg="Campo Obligatorio">
+										{loop="$fsc->colonia"}
+											<option value="{$value}">{$value}</option>
+										{/loop}
+										</select>
+									 </div>
+								  </div> 						  
+							   </div> 
+					  </div>
+					</div>
+					<div class="panel-footer text-right">
+					    <input type="hidden" name="Frm_direccion" value="direccion" />
+						<div class="form-group">
+							<button type="submit" class="btn btn-sm btn-primary">
+									Guardar &nbsp <span class="glyphicon glyphicon-floppy-disk"></span>
+							</button>
+						</div>	
+					</div>
+				</form>
+		</div>
+		
+		<div class="panel panel-primary" id="panel_facturacion">
+				<form name="MxAdmin_Empresa" action="{$fsc->page->url()}#facturacion" method="post" class="form" role="form">
+				   <div class="panel-heading">
+					  <h3 class="panel-title">Facturación:</h3>
+				   </div>
+				   <div class="panel-body">
+					<div class="row">
+					 <div class="form-group">   
+					  <div class="col-sm-4">
+						 Divisa:
+						 <input type="text" name="coddivisa" value="MXN" />                     
+					  </div>
+					   <div class="col-sm-4">
+						 Código País:
+						 <input type="text" name="codpais" value="MEX" />                     
+					  </div>
+					  <div class="col-sm-4">
+						 IVA:
+						 <input type="text" name="codimpuesto" value="16%" />                     
+					  </div>
+					</div>
+					<br /><br />
+					</div>               
+				   </div>
+					 <div class="panel-footer text-right">
+					  <input type="hidden" name="Frm_facturacion" value="facturacion" />
+					  <div class="form-group">
+							<button type="submit" class="btn btn-sm btn-primary">
+							    Guardar: &nbsp <span class="glyphicon glyphicon-floppy-disk"></span>
+							</button>
+						</div>	
+				   </div>
+				</form>
+		</div>			
+				
+	    <div class="panel panel-primary" id="panel_traduccion">
+			<form name="MxAdmin_Traduccion" action="{$fsc->page->url()}#traduccion" method="post" class="form" role="form"> 
                <div class="panel-heading">
-                  <h3 class="panel-title">Datos generales</h3>
+                  <h3 class="panel-title">Traducción</h3>
                </div>
-               <div class="panel-body">
-               
-                <div class="row">
-                    <br />
-                    <div class="col-sm-3">
-                        Dirección por Código Postal:
-                    </div>
-                </div>    
-                <div class="row">                    
-                    <div class="col-sm-3">
-                      <div class="form-group">  
-                        <div class="input-group">
-                          <input type="text" class="form-control"  id="cpMX" maxlength="5" required title="(5) Cinco Números" />
-                          <span class="input-group-btn">
-                            <button onclick="javascript:CodPost.get('{$fsc->url()}')" class="btn btn-default" type="button"><span class="glyphicon glyphicon-search"></span></button>
-                          </span>
-                        </div>
-                      </div>    
-                    </div>
-                </div>                   
-                <div class="row">
-                    <div class="col-sm-12">
-                        <br/>
-                        <div style="line-height: 5%; font-size: 12px;"> 
-                            <i>Funciona con <a href="http://simplehtmldom.sourceforge.net/" target="_blank">SimpleHtmlDom</a> y con la API desarrollada por <a href="https://github.com/Munett" target="_blank">Münett</a></i> 
-                            <hr style="width: 100%; color: black; height: 1px; background-color:black;" />
-                        </div>    
-                    </div>
-                </div>
-                 <div class="row">  
-                    <div class="col-sm-6">
-                        <div class="form-group">
-                         Zona Horaria:
-                        <select class="form-control" id="MXestados">   
-                               {$fsc->huso_hor_mx()}
-                        </select>
-                        </div>
-                        <br />
-                     </div>
-                 </div>   
-                 <div class="row"> 
-                  <div class="col-sm-5">
-                     <div class="form-group">
-                        Nombre Legal:
-                        <input class="form-control" type="text" name="nombre" value="{$fsc->empresa->nombre}" autocomplete="off" />
-                     </div>
-                  </div>
-                  <div class="col-sm-3">
-                     <div class="form-group">
-                        Nombre Comercial:
-                        <input class="form-control" type="text" name="nombrecorto" value="{$fsc->empresa->nombrecorto}" autocomplete="off"/>
-                     </div>
-                  </div>
-                  <div class="col-sm-4">
-                     <div class="form-group">
-                         R.F.C. (Registro Federal de Contribuyentes) 
-                        <input class="form-control" type="text" name="cifnif" value="{$fsc->empresa->cifnif}" autocomplete="off"/>
-                     </div>
-                  </div>
-                  <div class="col-sm-4">
-                     <div class="form-group">
-                        Administrador / Representante Legal:
-                        <input class="form-control" type="text" name="administrador" value="{$fsc->empresa->administrador}" autocomplete="off"/>
-                     </div>
-                  </div>
-                  <div class="col-sm-2">
-                     <div class="form-group">
-                        País:
-                        <input type="text" name="codpais" value="{$fsc->empresa->codpais}" class="form-control" value="" />                        
-                     </div>
-                  </div>
-                  <div class="col-sm-3">
-                     <div class="form-group">
-                        Estado
-                        <input id="ac_provincia" class="form-control" type="text" name="provincia"  value="{$fsc->empresa->provincia}" value=""/>
-                     </div>
-                  </div>
-                  <div class="col-sm-3">
-                     <div class="form-group">
-                        Ciudad / Municipio / Delegación:
-                        <input class="form-control" type="text" name="ciudad" value="{$fsc->empresa->ciudad}" autocomplete="off"/>
-                     </div>
-                  </div>
-                  <div class="col-sm-3">
-                     <div class="form-group">
-                        Código Postal:
-                        <input class="form-control" type="text" name="codpostal" value="{$fsc->empresa->codpostal}" autocomplete="off"/>
-                     </div>
-                  </div>
-                  <div class="col-sm-3">
-                     <div class="form-group">
-                        Colonia:                        
-                        <select name="colonia" class="form-control">
-                        {loop="$fsc->colonia"}
-                            <option value="{$value}">{$value}</option>
-                        {/loop}
-                        </select>
-                     </div>
-                  </div> 
-                  <div class="col-sm-6">
-                     <div class="form-group">
-                        Dirección:
-                        <input class="form-control" type="text" name="direccion" value="{$fsc->empresa->direccion}" autocomplete="off"/>
-                     </div>
-                  </div>
-                  <div class="col-sm-4">
-                     <div class="form-group">
-                        Teléfono:
-                        <input class="form-control" type="text" name="telefono" value="{$fsc->empresa->telefono}" autocomplete="off"/>
-                     </div>
-                  </div>
-                  <div class="col-sm-4">
-                     <div class="form-group">
-                        Fax:
-                        <input class="form-control" type="text" name="fax" value="{$fsc->empresa->fax}" autocomplete="off"/>
-                     </div>
-                  </div>                  
-                  <div class="col-sm-4">
-                     <div class="form-group">
-                        Web:
-                        <input class="form-control" type="text" name="web" value="{$fsc->empresa->web}" autocomplete="off"/>
-                     </div>
-                  </div>
-               </div>
-               </div>     
-               <div class="panel-footer text-right">
-                  <button class="btn btn-sm btn-primary" type="submit" onclick="this.disabled=true;this.form.submit();">
-                     <span class="glyphicon glyphicon-floppy-disk"></span> &nbsp; Guardar
-                  </button>
-               </div>
-            </div>
-            <div class="panel panel-primary" id="panel_facturacion">
-               <div class="panel-heading">
-                  <h3 class="panel-title">Facturación</h3>
-               </div>
-               <div class="panel-body">
-                <div class="row">
-                 <div class="form-group">   
-                  <div class="col-sm-4">
-                     Divisa:
-                     <input type="text" name="coddivisa" value="MXN" />                     
-                  </div>
-                   <div class="col-sm-4">
-                     Código País:
-                     <input type="text" name="codpais" value="MX" />                     
-                  </div>
-                  <div class="col-sm-4">
-                     IVA:
-                     <input type="text" name="codimpuesto" value="16%" />                     
-                  </div>
-                </div>
-                </div>               
-               </div>
-                 <div class="panel-footer text-right">
-                  <button class="btn btn-sm btn-primary" type="submit" onclick="this.disabled=true;this.form.submit();">
-                     <span class="glyphicon glyphicon-floppy-disk"></span> &nbsp; Guardar
-                  </button>
-               </div>
-            </div>
-           <div class="panel panel-primary" id="panel_traduccion">
-               <div class="panel-heading">
-                  <h3 class="panel-title">Traducción Propuesta para México</h3>
-               </div>
-               <div class="panel-body">
-                        <div class="row bg-info">
-                  <div class="col-md-12 col-sm-12">
-                     <h2>
-                        <span class="glyphicon glyphicon-globe"></span>
-                        &nbsp; Traducciones:
-                     </h2>                     
-                  </div>
-               </div>
-               <div class="row bg-info">
+               <div class="panel-body">                       
+               <div class="row">
+				<br />
                   {loop="$fsc->traducciones()"}
                   <div class="col-md-2 col-sm-3">
                      <div class="form-group">
@@ -388,19 +356,18 @@
                      </div>
                   </div>
                   {/loop}
-               </div>                   
+               </div>
+			   <br /> <br />
                </div>
                 <div class="panel-footer text-right">
-                  <button class="btn btn-sm btn-primary" type="submit" onclick="this.disabled=true;this.form.submit();">
-                     <span class="glyphicon glyphicon-floppy-disk"></span> &nbsp; Guardar
-                  </button>
+				<input type="hidden" name="Frm_traducción" value="traduccion" />
+                  <button type="submit" class="btn btn-sm btn-primary">
+				  Guardar &nbsp <span class="glyphicon glyphicon-floppy-disk"></span>
+				  </button>
                </div>
-           </div>          
-              
-         </form>
-      </div>             
-      </div>
-   </div>
-</div>         
-<input type='hidden' name="Mcp" id="Mcp" value="" />
+			</form>	
+        </div> 
+	</div>	 
+</div>
+
 {include="footer"}
